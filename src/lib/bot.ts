@@ -5,6 +5,7 @@ import type {
   AppBskyFeedPost,
 } from "@atproto/api";
 import atproto from "@atproto/api";
+import { TwitterPost } from "./types.js";
 const { BskyAgent, RichText } = atproto;
 
 type BotOptions = {
@@ -48,44 +49,98 @@ export default class Bot {
     }
   }
 
-  async get(limit: number = 5) {
-    const response = await this.#agent.api.app.bsky.feed.getAuthorFeed({
-      actor: bskyAccount.identifier, // Handle da conta para obter o feed
-      limit,
-    });
-
-    if (response.success) {
-
-      const records = response.data.feed.map((item: any) => {
-        const { text, createdAt } = item.post.record;
-        return { text, createdAt };
+  async get(limit: number = 10) {
+    try {
+      const response = await this.#agent.api.app.bsky.feed.getAuthorFeed({
+        actor: bskyAccount.identifier, // Handle da conta para obter o feed
+        limit,
       });
-      
-      return records;
 
-    } else {
-      throw new Error("Falha ao obter o feed do usuário");
+      if (response.success) {
+
+        const records = response.data.feed.map((item: any) => {
+          const { text, createdAt } = item.post.record;
+          return { text, createdAt };
+        });
+
+        return records;
+
+      } else {
+        throw new Error("Falha ao obter o feed do usuário");
+      }
+    } catch (error) {
+      throw new Error('Erro no get dos blueets');
     }
   }
 
+  /*
+    static async runPost(
+      getPostText: () => Promise<string>,
+      botOptions?: Partial<BotOptions>
+    ) {
+      console.log("Running post ");
+      const { service, dryRun } = botOptions
+        ? Object.assign({}, this.defaultOptions, botOptions)
+        : this.defaultOptions;
+      const bot = new Bot(service);
+      await bot.login(bskyAccount);
+      const text = await getPostText();
+      if (!dryRun) {
+        await bot.post(text);
+      }
+      return text;
+    }
+      */
 
+  /*
   static async runPost(
-    getPostText: () => Promise<string>,
+    postText: string,
     botOptions?: Partial<BotOptions>
   ) {
-
-    console.log("Running post ");
-
+    console.log("Posting... " + postText);
+  
     const { service, dryRun } = botOptions
       ? Object.assign({}, this.defaultOptions, botOptions)
       : this.defaultOptions;
+  
     const bot = new Bot(service);
     await bot.login(bskyAccount);
-    const text = await getPostText();
+  
     if (!dryRun) {
-      await bot.post(text);
+      await bot.post(postText);
     }
-    return text;
+  
+    console.log("Posted!");
+    return postText;
+  }
+  */
+
+  static async runPost(
+    posts: TwitterPost[],
+    botOptions?: Partial<BotOptions>
+  ) {
+
+    console.log("Starting to post array. Size: " + posts.length);
+
+    posts.forEach(async post => {
+
+      console.log("Posting... " + post.title);
+
+      const { service, dryRun } = botOptions
+        ? Object.assign({}, this.defaultOptions, botOptions)
+        : this.defaultOptions;
+
+      const bot = new Bot(service);
+      await bot.login(bskyAccount);
+
+      if (!dryRun) {
+        await bot.post(post.title);
+      }
+
+      console.log("Posted!");
+    });
+
+    console.log("Complete!");
   }
 
 
